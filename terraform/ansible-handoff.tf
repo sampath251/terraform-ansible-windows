@@ -1,3 +1,15 @@
+resource "local_file" "ansible_inventory" {
+    depends_on = [
+      aws_instance.ec2-instance
+    ]
+  content         = aws_instance.ec2-instance.private_ip
+  filename        = "../ansible/ansible_inventory.txt"
+  file_permission = "0777"
+  provisioner "local-exec" {
+          #working_dir = "../ansible"
+          command = "sleep 240; ansible-playbook -i '/var/lib/cloudbees-core-cm/workspace/Terraform-Ansible-ETL/ansible/ansible_inventory.txt' /var/lib/cloudbees-core-cm/workspace/Terraform-Ansible-ETL/ansible/playbook.yml"
+       }
+}
 #connecting to the Ansible control node using winrm connection
 resource "null_resource" "nullremote1" {
 depends_on = [aws_instance.ec2-instance] 
