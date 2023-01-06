@@ -1,0 +1,20 @@
+---
+- name: Post-provision and Configuration
+  hosts: all
+  vars_files:
+       - vars
+  become: false
+  tasks:
+   - name: Download the Apache installer
+     win_get_url:
+        url: https://archive.apache.org/dist/httpd/binaries/win32/httpd-2.2.25-win32-x86-no_ssl.msi
+        dest: C:\Users\httpd-2.2.25-win32-x86-no_ssl.msi
+   - name: Install MSI
+     win_package:
+        path: C:\Users\httpd-2.2.25-win32-x86-no_ssl.msi
+        state: present
+   - name: Specifying a destination path
+     ansible.builtin.fetch:
+      src: /home/ec2-user/etl-binaries/
+      dest: C:\Users
+      flat: yes

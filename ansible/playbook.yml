@@ -1,0 +1,67 @@
+---
+- name: Post-provision and Configuration
+  hosts: all
+  connection: ssh
+  become: true
+  tasks:
+  - name: Create filesystem on devxvdh
+    filesystem:
+      fstype: xfs
+      dev: "/dev/xvdh"
+
+  - name: Mount up device
+    mount:
+      path: "/opt/appliedpathways"
+      src: "/dev/xvdh"
+      fstype: xfs
+      state: mounted 
+
+  - name: Installing Git package
+    package:
+      name:
+        - git-all
+      state: present
+
+  # - name: Create directory for roles
+  #   ansible.builtin.file:
+  #     path: /etc/ansible/ansible-roles/
+  #     state: directory
+  #     mode: '0755'
+  #     recurse: yes 
+
+  # - name: Check if the roles repo is already installed
+  #   stat: 
+  #     path: "/opt/ansible-sharedroles/"
+  #   register: roles_repo 
+
+  - name: Git clone
+    become_user: root
+    ansible.builtin.git:
+      repo: 'https://{{ git_username }}:{{ git_password }}@bitbucket-prod.aimspecialtyhealth.com/scm/ce/ansible-shared-post-provisioning.git'
+      dest: /etc/ansible/ansible-roles
+      version: master
+      clone: yes
+      update: yes
+   
+
+  # - import_role:
+  #     name: post-provisioning
+  - name: Executing ansible roles
+    ansible.builtin.shell:
+      chdir: /etc/ansible/ansible-roles/roles/post-provisioning/tasks  
+      cmd: ansible-playbook -i ../ansible/ansible_inventory.ini /etc/ansible/ansible-roles/roles/post-provisioning/tasks/main.yml > play-output.txt
+
+  - name: viewing output of inside playbook
+    ansible.builtin.shell:
+      chdir: /etc/ansible/ansible-roles/roles/post-provisioning/tasks/
+      cmd: cat play-output.txt 
+
+   
+      
+  
+     
+
+ 
+  
+
+
