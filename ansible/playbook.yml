@@ -1,67 +1,49 @@
 ---
 - name: Post-provision and Configuration
   hosts: all
-  connection: ssh
-  become: true
+  vars_files:
+       - vars
+  become: false
+  vars:
+    ansible_become_password: "{{ ansible_password }}"
   tasks:
-  - name: Create filesystem on devxvdh
-    filesystem:
-      fstype: xfs
-      dev: "/dev/xvdh"
+   - name: Copy folder contents recursively
+     win_copy:
+      src: "{{ src_path }}"
+      dest: "{{ dest_path }}"
+      remote_src: no
 
-  - name: Mount up device
-    mount:
-      path: "/opt/appliedpathways"
-      src: "/dev/xvdh"
-      fstype: xfs
-      state: mounted 
+   - name: Install SQLServer2016-SSEI-Eval
+     win_command: cmd.exe /k C:\Users\SQLServer2016-SSEI-Eval.exe /Q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS
+     become: yes
+     become_method: runas
+     become_user: "{{ ansible_user }}"
 
-  - name: Installing Git package
-    package:
-      name:
-        - git-all
-      state: present
+   - name: Install SQLServer2016SP3
+     win_command: cmd.exe /k C:\Users\SQLServer2016SP3-KB5003279-x64-ENU /Q /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS
+     become: yes
+     become_method: runas
+     become_user: "{{ ansible_user }}"
 
-  # - name: Create directory for roles
-  #   ansible.builtin.file:
-  #     path: /etc/ansible/ansible-roles/
-  #     state: directory
-  #     mode: '0755'
-  #     recurse: yes 
+   - name: Install MSI
+     win_package:
+        path: C:\Users\SSISPowerPackSetup_64bit_Trial.msi
+        state: present
 
-  # - name: Check if the roles repo is already installed
-  #   stat: 
-  #     path: "/opt/ansible-sharedroles/"
-  #   register: roles_repo 
+   - name: Install SSDT-Setup-ENU
+     win_command: cmd.exe /k C:\Users\SSDT-Setup-ENU.exe /quiet /acceptEula
+     become: yes
+     become_method: runas
+     become_user: "{{ ansible_user }}"
 
-  - name: Git clone
-    become_user: root
-    ansible.builtin.git:
-      repo: 'https://{{ git_username }}:{{ git_password }}@bitbucket-prod.aimspecialtyhealth.com/scm/ce/ansible-shared-post-provisioning.git'
-      dest: /etc/ansible/ansible-roles
-      version: master
-      clone: yes
-      update: yes
-   
+   - name: PSCX
+     win_shell: cmd Find-Package pscx | ? ProviderName -eq PSModule | Install-Package -Force
 
-  # - import_role:
-  #     name: post-provisioning
-  - name: Executing ansible roles
-    ansible.builtin.shell:
-      chdir: /etc/ansible/ansible-roles/roles/post-provisioning/tasks  
-      cmd: ansible-playbook -i ../ansible/ansible_inventory.ini /etc/ansible/ansible-roles/roles/post-provisioning/tasks/main.yml > play-output.txt
+   - name: unpack
+     win_shell: Expand-Archive -LiteralPath C:\Users\PROGRESS_DATADIRECT_ODBC_SYBASEASE_AIX_64.zip -DestinationPath C:\Users\
 
-  - name: viewing output of inside playbook
-    ansible.builtin.shell:
-      chdir: /etc/ansible/ansible-roles/roles/post-provisioning/tasks/
-      cmd: cat play-output.txt 
-
-   
-      
-  
-     
-
- 
-  
-
-
+  #  - name: Install DevartODBCASE
+  #    win_command: cmd.exe /k C:\Users\DevartODBCASE.exe /Q /ACTION=Install /IACCEPTTHEAGREEMENT /LICENSEINFORMATION=Trial
+  #    become: yes
+  #    become_method: runas
+  #    become_user: Administrator
